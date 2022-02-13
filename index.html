@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Brains@Play Stack | Spring 2022</title>
+
+    <!-- datastreams-api -->
+    <script src="https://cdn.jsdelivr.net/npm/@brainsatplay/device"></script>
+    <script src="https://cdn.jsdelivr.net/npm/datastreams-api"></script>
+
+    <!-- liveserver -->
+    <script src="https://cdn.jsdelivr.net/npm/liveserver-router"></script>
+    <script src="https://cdn.jsdelivr.net/npm/liveserver-frontend"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/liveserver-webrtc"></script> -->
+
+    <!-- jsnwb -->
+    <script src="https://cdn.jsdelivr.net/npm/jsnwb"></script>
+
+    <!-- brainsatplay-components -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/brainsatplay-components"></script> -->
+
+
+    <!-- brainsatplay -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/brainsatplay"></script> -->
+
+
+</head>
+<body>
+    
+</body>
+
+<script type="module">
+
+
+    // ---------------------------------------
+    // 1. Get Data (datastreams-api)
+    // ---------------------------------------
+
+    // TODO: Fix default export
+    import * as datastreams from "https://cdn.jsdelivr.net/npm/datastreams-api/dist/module.js"
+    console.log(datastreams)
+    const dataDevices = new datastreams.DataDevices()
+    const { stream } = await dataDevices.getUserDevice(device.device)
+
+    // ---------------------------------------
+    // 2. Send It Anywhere (liveserver)
+    // ---------------------------------------
+    import * as router from "https://cdn.jsdelivr.net/npm/liveserver-router/dist/module.js"
+    import * as liveserver from "https://cdn.jsdelivr.net/npm/liveserver-frontend/dist/module.js"
+    console.log(router, liveserver)
+
+    const r = new router.Router()
+    const http = new liveserver.HTTPClient(r) // Why? Isn't this default in Router?
+    const ws = new liveserver.WebsocketClient(r)
+
+    // Load Services
+    r.load(http)
+    r.load(ws)
+
+    // Connect to Remote Endpoint
+    const endpoint = await r.connect('http://localhost')
+
+    // ---------------------------------------
+    // 3. Stream into a Standard Data Structure (jsnwb)
+    // ---------------------------------------
+    import * as jsnwb from "https://cdn.jsdelivr.net/npm/jsnwb/dist/module.js"
+    console.log(jsnwb)
+
+    import * as hdf5 from "https://cdn.jsdelivr.net/npm/h5wasm@latest/dist/esm/hdf5_hl.js";
+    const io = new jsnwb.NWBHDF5IO(hdf5)
+
+    const examplePath = 'https://api.dandiarchive.org/api/assets/3bd3a651-f6cc-47a8-adbe-b4d82dbbe4d8/download/'
+    io.fetch(examplePath).then(file => {
+        console.log('File', file)
+    })
+    
+    stream.tracks.forEach(t => {
+        t.subscribe(data => {
+            // console.log('Pipe into an NWB File', data)
+        })
+    })
+
+    // ---------------------------------------
+    // 4. Build a Simple UI (brainsatplay-components)
+    // ---------------------------------------
+    import * as components from "https://cdn.jsdelivr.net/npm/brainsatplay-components/dist/module.js"
+    console.log(components)
+    const player = new components.Nav({
+        brand: {content: 'Brains@Play'},
+        primary: {
+            menu: [
+                {content: 'Page 1'},
+                {content: 'Page 2'},
+            ],
+            options: [
+                {content: 'Contact'},
+                {content: 'Login'},
+            ]
+        },
+        secondary: [
+                {content: 'Subdomain 1'},
+                {content: 'Action', type: 'button'},
+            ]
+
+    })
+
+    document.body.insertAdjacentElement('afterbegin', player)
+
+
+    // ---------------------------------------
+    // 5. Do Cool Sh!t (brainsatplay)
+    // ---------------------------------------
+    // import brainsatplay from "https://cdn.jsdelivr.net/npm/brainsatplay/dist/module.js"
+    console.log('Coming soon...')
+
+
+</script>
+
+</html>
