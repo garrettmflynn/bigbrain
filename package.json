@@ -1,0 +1,22 @@
+{
+  "name": "bigbrain",
+  "version": "0.0.0",
+  "type": "module",
+  "description": " Brains@Play Stack | Spring 2022",
+  "main": "index.js",
+  "repository": "https://github.com/garrettmflynn/bigbrain.git",
+  "author": "Garrett <gflynn@usc.edu>",
+  "license": "AGPL-3.0-or-later",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "devDependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.17.2",
+    "http": "^0.0.1-security",
+    "liveserver-backend": "0.0.11",
+    "liveserver-router": "0.0.11",
+    "liveserver-webrtc": "0.0.11"
+  }
+}

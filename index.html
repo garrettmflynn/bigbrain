@@ -7,16 +7,16 @@
     <title>Brains@Play Stack | Spring 2022</title>
 
     <!-- datastreams-api -->
-    <script src="https://cdn.jsdelivr.net/npm/@brainsatplay/device"></script>
-    <script src="https://cdn.jsdelivr.net/npm/datastreams-api"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@brainsatplay/device"></script> -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/datastreams-api"></script> -->
 
     <!-- liveserver -->
-    <script src="https://cdn.jsdelivr.net/npm/liveserver-router"></script>
-    <script src="https://cdn.jsdelivr.net/npm/liveserver-frontend"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/liveserver-router"></script> -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/liveserver-frontend"></script> -->
     <!-- <script src="https://cdn.jsdelivr.net/npm/liveserver-webrtc"></script> -->
 
     <!-- jsnwb -->
-    <script src="https://cdn.jsdelivr.net/npm/jsnwb"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/jsnwb"></script> -->
 
     <!-- brainsatplay-components -->
     <!-- <script src="https://cdn.jsdelivr.net/npm/brainsatplay-components"></script> -->
@@ -40,43 +40,78 @@
 
     // TODO: Fix default export
     import * as datastreams from "https://cdn.jsdelivr.net/npm/datastreams-api/dist/module.js"
-    console.log(datastreams)
     const dataDevices = new datastreams.DataDevices()
-    const { stream } = await dataDevices.getUserDevice(device.device)
+
+    import { device } from "https://cdn.jsdelivr.net/npm/@brainsatplay/device/dist/module.js"
+
+    const { stream } = await dataDevices.getUserDevice(device)
 
     // ---------------------------------------
     // 2. Send It Anywhere (liveserver)
     // ---------------------------------------
-    import * as router from "https://cdn.jsdelivr.net/npm/liveserver-router/dist/module.js"
-    import * as liveserver from "https://cdn.jsdelivr.net/npm/liveserver-frontend/dist/module.js"
-    console.log(router, liveserver)
+    // import * as router from "https://cdn.jsdelivr.net/npm/liveserver-router/dist/module.js"
+    import { Router } from "https://cdn.jsdelivr.net/npm/liveserver-router/dist/index.mjs"
+    // import {Router} from "./libs/router/dist/index.mjs"
 
-    const r = new router.Router()
-    const http = new liveserver.HTTPClient(r) // Why? Isn't this default in Router?
-    const ws = new liveserver.WebsocketClient(r)
+    // Create a Router Instance
+    const r = new Router()
 
-    // Load Services
+    // Connect to Local Server (liveserver-frontend)
+    import * as liveserver from "https://cdn.jsdelivr.net/npm/liveserver-frontend/dist/index.mjs"
+    // import * as liveserver from "./libs/frontend/dist/index.mjs"
+    const http = new liveserver.HTTPService(r) // Why? Isn't this default in Router?
+    const ws = new liveserver.WebsocketService(r)
+
     r.load(http)
     r.load(ws)
 
-    // Connect to Remote Endpoint
-    const endpoint = await r.connect('http://localhost')
+    const id = Math.floor(100000000*Math.random())
+    const credentials = {id, _id:id}
+    const endpoint = await r.connect('http://localhost') // Connect to local server
+    await r.login(endpoint, credentials) // Must register with credentials
+    endpoint._subscribe({protocol: 'websocket', force: true}) // NOTE: Must enable before WebRTC can work
+    
+    // Connect to Peers (liveserver-webrtc)
+    import webrtc from "https://cdn.jsdelivr.net/npm/liveserver-webrtc/dist/index.mjs"
+    // import webrtc from "./libs/webrtc/dist/index.mjs"
+
+    const rtc = new webrtc(r)
+    r.load(rtc)
+    const peer = await r.connect({
+        type: 'webrtc',
+        target: 'rooms/myroom',
+        link: endpoint,
+        credentials // TODO: Auto-create if not provided?
+    })
+
+    // Forward Server Responses to Peers
+    // endpoint.readable.pipeTo(peer.writable) 
 
     // ---------------------------------------
     // 3. Stream into a Standard Data Structure (jsnwb)
     // ---------------------------------------
     import * as jsnwb from "https://cdn.jsdelivr.net/npm/jsnwb/dist/module.js"
-    console.log(jsnwb)
 
     import * as hdf5 from "https://cdn.jsdelivr.net/npm/h5wasm@latest/dist/esm/hdf5_hl.js";
-    const io = new jsnwb.NWBHDF5IO(hdf5)
+    const io = new jsnwb.NWBHDF5IO(hdf5, true)
 
-    const examplePath = 'https://api.dandiarchive.org/api/assets/3bd3a651-f6cc-47a8-adbe-b4d82dbbe4d8/download/'
-    io.fetch(examplePath).then(file => {
-        console.log('File', file)
-    })
-    
+    const examplePath = 'https://api.dandiarchive.org/api/assets/902af029-f411-40b5-81f1-67930d56ee05/download/'
+    io.fetch(
+        examplePath, 
+        'file.nwb', 
+        (ratio) => console.log('Progress', ratio)
+    )
+    .then(console.log)
+    .catch(console.error)
+
     stream.tracks.forEach(t => {
+
+        // Send to the Server
+        console.log(endpoint.writable)
+        // t.pipeTo(endpoint.writable) // NOTE: Gonna have to fork
+
+        // t.pipeTo(file.writable)
+
         t.subscribe(data => {
             // console.log('Pipe into an NWB File', data)
         })
@@ -86,7 +121,6 @@
     // 4. Build a Simple UI (brainsatplay-components)
     // ---------------------------------------
     import * as components from "https://cdn.jsdelivr.net/npm/brainsatplay-components/dist/module.js"
-    console.log(components)
     const player = new components.Nav({
         brand: {content: 'Brains@Play'},
         primary: {
