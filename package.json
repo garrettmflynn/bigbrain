@@ -18,5 +18,8 @@
     "liveserver-backend": "0.0.11",
     "liveserver-router": "0.0.11",
     "liveserver-webrtc": "0.0.11"
+  },
+  "dependencies": {
+    "datastreams-api": "^0.0.12"
   }
 }

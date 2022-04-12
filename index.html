@@ -8,7 +8,7 @@
 
     <!-- datastreams-api -->
     <!-- <script src="https://cdn.jsdelivr.net/npm/@brainsatplay/device"></script> -->
-    <!-- <script src="https://cdn.jsdelivr.net/npm/datastreams-api"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/datastreams-api"></script>
 
     <!-- liveserver -->
     <!-- <script src="https://cdn.jsdelivr.net/npm/liveserver-router"></script> -->
@@ -37,9 +37,9 @@
     // ---------------------------------------
     // 1. Get Data (datastreams-api)
     // ---------------------------------------
-
-    // TODO: Fix default export
-    import * as datastreams from "https://cdn.jsdelivr.net/npm/datastreams-api/dist/module.js"
+    // import * as datastreams from "https://cdn.jsdelivr.net/npm/datastreams-api/dist/index.esm.js"
+    // import * as datastreams from "./node_modules/datastreams-api/dist/index.js"
+    console.log(datastreams)
     const dataDevices = new datastreams.DataDevices()
 
     import { device } from "https://cdn.jsdelivr.net/npm/@brainsatplay/device/dist/module.js"
@@ -77,7 +77,7 @@
 
     const rtc = new webrtc(r)
     r.load(rtc)
-    const peer = await r.connect({
+    const peers = await r.connect({
         type: 'webrtc',
         target: 'rooms/myroom',
         link: endpoint,
@@ -90,10 +90,10 @@
     // ---------------------------------------
     // 3. Stream into a Standard Data Structure (jsnwb)
     // ---------------------------------------
-    import * as jsnwb from "https://cdn.jsdelivr.net/npm/jsnwb/dist/module.js"
+    import * as nwb from "https://cdn.jsdelivr.net/npm/jsnwb/dist/index.esm.js"
 
     import * as hdf5 from "https://cdn.jsdelivr.net/npm/h5wasm@latest/dist/esm/hdf5_hl.js";
-    const io = new jsnwb.NWBHDF5IO(hdf5, true)
+    const io = new nwb.IO(hdf5, true)
 
     const examplePath = 'https://api.dandiarchive.org/api/assets/902af029-f411-40b5-81f1-67930d56ee05/download/'
     io.fetch(
@@ -107,13 +107,13 @@
     stream.tracks.forEach(t => {
 
         // Send to the Server
-        console.log(endpoint.writable)
-        // t.pipeTo(endpoint.writable) // NOTE: Gonna have to fork
-
-        // t.pipeTo(file.writable)
-
+        // TODO: Enable this to stream
         t.subscribe(data => {
-            // console.log('Pipe into an NWB File', data)
+            // Pipe to NWB File
+
+            // Send to Peers
+            console.log({ message: [data]})
+            // peers.send('webrtc/stream', { message: [data]})
         })
     })
 
@@ -139,6 +139,14 @@
             ]
 
     })
+
+    rtc.onpeerconnect = (peer) => {
+        console.log('Connect', peer)
+    }
+
+    rtc.onpeerdisconnect = (peer) => {
+        console.log('Disconnect', peer)
+    }
 
     document.body.insertAdjacentElement('afterbegin', player)
 
