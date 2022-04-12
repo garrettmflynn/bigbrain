@@ -27,24 +27,30 @@
 
 
 </head>
-<body>
-    
+<body style="padding: 10px;">
+    <h1>Big Brain</h1>
+    <hr>
+    <br>
+
+    <div id="buttons">
+        <button id="device">Synthetic</button>
+        <button id="muse">Muse</button>
+        <button id="ganglion">Ganglion</button>
+        <button id="hegduino">HEGduino</button>
+    </div>
+    <div id="graph">
+
+    </div>
 </body>
 
 <script type="module">
-
 
     // ---------------------------------------
     // 1. Get Data (datastreams-api)
     // ---------------------------------------
     // import * as datastreams from "https://cdn.jsdelivr.net/npm/datastreams-api/dist/index.esm.js"
     // import * as datastreams from "./node_modules/datastreams-api/dist/index.js"
-    console.log(datastreams)
     const dataDevices = new datastreams.DataDevices()
-
-    import { device } from "https://cdn.jsdelivr.net/npm/@brainsatplay/device/dist/module.js"
-
-    const { stream } = await dataDevices.getUserDevice(device)
 
     // ---------------------------------------
     // 2. Send It Anywhere (liveserver)
@@ -68,7 +74,7 @@
     const id = Math.floor(100000000*Math.random())
     const credentials = {id, _id:id}
     const endpoint = await r.connect('http://localhost') // Connect to local server
-    await r.login(endpoint, credentials) // Must register with credentials
+    await r.login(endpoint, credentials).catch(e => e) // Must register with credentials
     endpoint._subscribe({protocol: 'websocket', force: true}) // NOTE: Must enable before WebRTC can work
     
     // Connect to Peers (liveserver-webrtc)
@@ -87,58 +93,47 @@
     // Forward Server Responses to Peers
     // endpoint.readable.pipeTo(peer.writable) 
 
-    // ---------------------------------------
-    // 3. Stream into a Standard Data Structure (jsnwb)
-    // ---------------------------------------
-    import * as nwb from "https://cdn.jsdelivr.net/npm/jsnwb/dist/index.esm.js"
+    // // ---------------------------------------
+    // // 3. Stream into a Standard Data Structure (jsnwb)
+    // // ---------------------------------------
+    // import nwb from "https://cdn.jsdelivr.net/npm/webnwb/dist/index.esm.js"
 
-    import * as hdf5 from "https://cdn.jsdelivr.net/npm/h5wasm@latest/dist/esm/hdf5_hl.js";
-    const io = new nwb.IO(hdf5, true)
+    // import * as hdf5 from "https://cdn.jsdelivr.net/npm/h5wasm@latest/dist/esm/hdf5_hl.js";
+    // console.log(nwb)
+    // const io = new nwb.NWBHDF5IO(hdf5, true)
 
-    const examplePath = 'https://api.dandiarchive.org/api/assets/902af029-f411-40b5-81f1-67930d56ee05/download/'
-    io.fetch(
-        examplePath, 
-        'file.nwb', 
-        (ratio) => console.log('Progress', ratio)
-    )
-    .then(console.log)
-    .catch(console.error)
+    // const examplePath = 'https://api.dandiarchive.org/api/assets/902af029-f411-40b5-81f1-67930d56ee05/download/'
+    // io.fetch(
+    //     examplePath, 
+    //     'file.nwb', 
+    //     (ratio) => console.log('Progress', ratio)
+    // )
+    // .then(console.log)
+    // .catch(console.error)
 
-    stream.tracks.forEach(t => {
 
-        // Send to the Server
-        // TODO: Enable this to stream
-        t.subscribe(data => {
-            // Pipe to NWB File
+//     button.onclick = async () => {
+//         console.log('click')
+//         const { stream } = await dataDevices.getUserDevice(device)
+        
+//         stream.tracks.forEach(t => {
 
-            // Send to Peers
-            console.log({ message: [data]})
-            // peers.send('webrtc/stream', { message: [data]})
-        })
-    })
+//         const element = document.createElement('p')
+//         document.body.insertAdjacentElement('beforeend', element)
 
-    // ---------------------------------------
-    // 4. Build a Simple UI (brainsatplay-components)
-    // ---------------------------------------
-    import * as components from "https://cdn.jsdelivr.net/npm/brainsatplay-components/dist/module.js"
-    const player = new components.Nav({
-        brand: {content: 'Brains@Play'},
-        primary: {
-            menu: [
-                {content: 'Page 1'},
-                {content: 'Page 2'},
-            ],
-            options: [
-                {content: 'Contact'},
-                {content: 'Login'},
-            ]
-        },
-        secondary: [
-                {content: 'Subdomain 1'},
-                {content: 'Action', type: 'button'},
-            ]
+//         // Send to the Server
+//         // TODO: Enable this to stream
+//         t.subscribe(data => {
+//             // Pipe to NWB File
 
-    })
+//             // Send to Peers
+//             element.innerHTML = `<strong>${t.contentHint}:</strong> ${data}`
+//             // console.log({ message: [data]})
+//             // peers.send('webrtc/stream', { message: [data]})
+//         })
+// })
+//     }
+
 
     rtc.onpeerconnect = (peer) => {
         console.log('Connect', peer)
@@ -148,16 +143,90 @@
         console.log('Disconnect', peer)
     }
 
-    document.body.insertAdjacentElement('afterbegin', player)
+    // Device Drivers
+    import ganglion from "https://cdn.jsdelivr.net/npm/@brainsatplay/ganglion@0.0.2/dist/index.esm.js"
+    import muse from "https://cdn.jsdelivr.net/npm/@brainsatplay/muse@0.0.1/dist/index.esm.js"
+    import device from "https://cdn.jsdelivr.net/npm/@brainsatplay/device@0.0.2/dist/index.esm.js"
+    import hegduino from "https://cdn.jsdelivr.net/npm/@brainsatplay/hegduino@0.0.4/dist/index.esm.js"
 
+    dataDevices.load(muse)
+    dataDevices.load(device)
+    dataDevices.load(ganglion)
+    dataDevices.load(hegduino)
 
-    // ---------------------------------------
-    // 5. Do Cool Sh!t (brainsatplay)
-    // ---------------------------------------
-    // import brainsatplay from "https://cdn.jsdelivr.net/npm/brainsatplay/dist/module.js"
-    console.log('Coming soon...')
+    // ------------- Setup Visualization (very rough) -------------
+    import * as components from "https://cdn.jsdelivr.net/npm/brainsatplay-ui@0.0.7/dist/index.esm.js"    
+    const graphDiv = document.getElementById('graph')
+    graphDiv.style.padding = '25px'
+    const timeseries = new components.streams.data.TimeSeries()
+    graphDiv.insertAdjacentElement('beforeend', timeseries)
 
+    // ------------- Declare Global Variables -------------
+    const allData = []
+    let channels = 0
+    let trackMap = new Map()
+    let contentHintToIndex = {}
 
+    // ------------- Declare Data Handler -------------
+    const ondata = (data, timestamps, contentHint) => {
+        console.log(`Data from Electrode ${contentHintToIndex[contentHint]} (${contentHint})`, data, timestamps)
+    }
+
+    // ------------- Declare Track Handler -------------
+    const handleTrack = (track) => { 
+
+        // ------------- Map Track Information (e.g. 10-20 Coordinate) to Index -------------
+        if (!trackMap.has(track.contentHint)) {
+            const index = trackMap.size
+            contentHintToIndex[track.contentHint] = index
+            trackMap.set(index, track)
+        }
+        
+        // ------------- Grab Index -------------
+        const i = contentHintToIndex[track.contentHint]
+        channels = (i > channels) ? i : channels // Assign channels as max track number
+
+        // ------------- Subscribe to New Data -------------
+        track.subscribe((data, timestamps) => {
+
+            // Organize New Data
+            let arr = []
+            for (let j = 0 ; j <= channels; j++) (i === j) ? arr.push(data) : arr.push([])
+
+            // Add Data to Timeseries Graph
+            timeseries.data = arr
+            timeseries.draw() // FORCE DRAW: Update happens too fast for UI
+
+            // Run ondata Callback
+            ondata(data, timestamps, track.contentHint)
+        })
+    }
+
+    // ------------- Declare Acquisition Function -------------
+
+    const startAcquisition = async (label) => {
+
+        // ------------- Get Device Stream -------------
+
+        // Method #1: By Label
+        const dataDevice = await dataDevices.getUserDevice({label, bluetooth: true})
+
+        // Method #2: By Class
+        // const dataDevice = await dataDevices.getUserDevice(ganglion)
+
+        // ------------- Grab DataStream from Device -------------
+        const stream = dataDevice.stream
+
+        // ------------- Handle All Tracks -------------
+        stream.tracks.forEach(handleTrack)
+        stream.onaddtrack = e => handleTrack(e.track)
+    }
+
+    // ------------- Set Button Functionality -------------
+    const buttons = document.querySelector('#buttons')
+    for (let button of buttons.querySelectorAll('button')) button.onclick = () => startAcquisition(button.id)
+
+    
 </script>
 
 </html>
